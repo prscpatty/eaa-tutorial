@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EAA Week 2 Tutorial — Prisca</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;600;700&display=swap');
+  :root{--navy:#0D1117;--green:#00FF87;--pink:#FF4D6D;--yellow:#FFD60A;--white:#F0F0F0;--card:#161B22;--border:#30363D;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:#090C10;font-family:'DM Sans',sans-serif;color:var(--white);min-height:100vh;}
+  .nav{position:fixed;top:0;left:0;right:0;background:rgba(9,12,16,0.95);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:10px 20px;z-index:100;backdrop-filter:blur(8px);}
+  .nav-title{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--green);letter-spacing:2px;}
+  .nav-controls{display:flex;gap:8px;align-items:center;}
+  .nav-btn{background:var(--card);border:1px solid var(--border);color:var(--white);padding:6px 14px;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:0.85rem;transition:all 0.2s;}
+  .nav-btn:hover{background:var(--green);color:#000;border-color:var(--green);}
+  .nav-btn:disabled{opacity:0.3;cursor:default;}
+  .nav-btn:disabled:hover{background:var(--card);color:var(--white);border-color:var(--border);}
+  .slide-counter{font-size:0.85rem;color:#8B949E;min-width:60px;text-align:center;}
+  .progress-bar{position:fixed;top:49px;left:0;right:0;height:3px;background:var(--border);z-index:99;}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--pink));transition:width 0.4s ease;}
+  main{padding-top:70px;}
+  .slide-wrapper{display:none;}
+  .slide-wrapper.active{display:block;}
+  .slide{width:100%;aspect-ratio:16/9;background:var(--navy);position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:4%;}
+  .top-label{position:absolute;top:4%;left:4%;font-size:clamp(0.45rem,1.1vw,0.65rem);color:#8B949E;letter-spacing:1px;font-family:'Bebas Neue',sans-serif;}
+  .timer-badge{position:absolute;top:4%;right:4%;background:var(--yellow);color:#000;font-family:'Bebas Neue',sans-serif;font-size:clamp(0.55rem,1.3vw,0.75rem);letter-spacing:1px;padding:4px 10px;border-radius:4px;}
+  .slide-tag{position:absolute;top:4%;right:4%;background:var(--pink);color:#000;font-family:'Bebas Neue',sans-serif;font-size:clamp(0.55rem,1.3vw,0.75rem);letter-spacing:2px;padding:4px 10px;border-radius:4px;}
+  .meme-impact{font-family:Impact,'Arial Narrow',sans-serif;font-weight:900;text-transform:uppercase;-webkit-text-stroke:1.5px #000;text-shadow:2px 2px 0 #000,-1px -1px 0 #000;line-height:1.1;}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+  @keyframes flicker{0%,100%{opacity:1}45%{opacity:.9}50%{opacity:.7}55%{opacity:.9}}
+
+  /* SLIDE 0 */
+  .s0{background:radial-gradient(ellipse at 50% 50%,#0D2818 0%,#0D0D0D 70%);}
+  .s0-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(0,255,135,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,135,0.04) 1px,transparent 1px);background-size:40px 40px;}
+  .s0-content{position:relative;z-index:2;text-align:center;display:flex;flex-direction:column;align-items:center;gap:2%;}
+  .s0-label{font-family:'Bebas Neue',sans-serif;font-size:clamp(0.8rem,2.2vw,1.4rem);color:#8B949E;letter-spacing:3px;}
+  .s0-qr{background:#fff;padding:12px;border-radius:12px;border:3px solid var(--green);}
+  .s0-url{font-size:clamp(0.5rem,1.2vw,0.7rem);color:var(--green);letter-spacing:1px;margin-top:4px;}
+  .s0-instruction{font-size:clamp(0.45rem,1vw,0.6rem);color:#8B949E;font-style:italic;}
+
+  /* SLIDE 1 */
+  .s1{background:radial-gradient(ellipse at 60% 40%,#0D2818 0%,#0D0D0D 70%);}
+  .s1-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(0,255,135,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,135,0.04) 1px,transparent 1px);background-size:40px 40px;}
+  .s1-content{position:relative;z-index:2;text-align:center;}
+  .s1-main{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6.5vw,5rem);color:var(--white);letter-spacing:4px;line-height:0.95;}
+  .s1-main span{color:var(--green);}
+  .s1-sub{font-size:clamp(0.8rem,2.2vw,1.3rem);color:#8B949E;font-style:italic;margin-top:10px;letter-spacing:2px;}
+  .s1-name{position:absolute;bottom:6%;left:5%;font-size:clamp(0.55rem,1.3vw,0.75rem);color:var(--green);letter-spacing:1px;}
+  .s1-npc{position:absolute;bottom:8%;right:5%;background:rgba(0,0,0,0.8);border:2px solid var(--green);border-radius:6px;padding:8px 12px;max-width:220px;text-align:left;}
+  .s1-npc .meme-impact{font-size:clamp(0.5rem,1.2vw,0.7rem);color:var(--yellow);display:block;margin-bottom:4px;}
+  .s1-npc p{font-size:clamp(0.45rem,1vw,0.6rem);color:var(--green);}
+  .s1-cursor{display:inline-block;width:6px;height:12px;background:var(--green);margin-left:3px;animation:blink 1s infinite;}
+
+  /* SLIDE 2 */
+  .s2{background:linear-gradient(135deg,#0D0D0D 0%,#1A0A12 100%);}
+  .s2-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.3rem,4vw,3rem);letter-spacing:3px;color:var(--white);text-align:center;margin-bottom:5%;}
+  .s2-boxes{display:flex;gap:4%;width:88%;}
+  .s2-box{flex:1;border-radius:12px;padding:5% 4%;text-align:center;}
+  .s2-box.left{background:linear-gradient(135deg,#1A2B1A,#0D1A0D);border:1px solid var(--green);}
+  .s2-box.right{background:linear-gradient(135deg,#2B1A20,#1A0D12);border:1px solid var(--pink);}
+  .s2-box .icon{font-size:clamp(1.5rem,3.5vw,2.2rem);margin-bottom:8px;}
+  .s2-box .box-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(0.85rem,2.2vw,1.4rem);letter-spacing:2px;margin-bottom:8px;}
+  .s2-box.left .box-title{color:var(--green);}
+  .s2-box.right .box-title{color:var(--pink);}
+  .s2-box p{font-size:clamp(0.5rem,1.2vw,0.72rem);color:#8B949E;line-height:1.5;}
+
+  /* SLIDE 3 */
+  .s3{background:#0D0D0D;align-items:flex-start;padding:5% 6%;}
+  .s3-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.2rem,3.5vw,2.5rem);letter-spacing:3px;color:var(--white);margin-bottom:4%;}
+  .s3-layout{display:flex;gap:4%;width:100%;align-items:flex-start;}
+  .s3-questions{flex:1;}
+  .s3-q{display:flex;align-items:flex-start;gap:3%;margin-bottom:4%;padding-bottom:4%;border-bottom:1px solid var(--border);}
+  .s3-q:last-child{border-bottom:none;margin-bottom:0;}
+  .s3-num{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.5rem,3.5vw,2.5rem);color:var(--green);line-height:1;min-width:38px;}
+  .s3-text strong{font-size:clamp(0.55rem,1.4vw,0.85rem);display:block;color:var(--white);line-height:1.3;}
+  .s3-text span{font-size:clamp(0.45rem,1vw,0.62rem);color:var(--green);letter-spacing:1px;}
+  .s3-meme-wrap{width:30%;display:flex;flex-direction:column;align-items:center;gap:6px;}
+
+  /* Galaxy brain SVG meme */
+  .galaxy-brain{width:100%;border-radius:8px;border:2px solid var(--border);overflow:hidden;}
+  .s3-meme-caption{font-size:clamp(0.4rem,0.9vw,0.55rem);color:#8B949E;font-style:italic;text-align:center;}
+
+  /* SLIDE 4 */
+  .s4{background:linear-gradient(135deg,#0D0D1A 0%,#0D1A12 100%);}
+  .s4-title{font-size:clamp(0.7rem,1.8vw,1rem);color:#8B949E;margin-bottom:3%;text-align:center;}
+  .s4-layout{display:flex;gap:4%;align-items:center;width:90%;}
+  .s4-bullets{flex:1.2;}
+  .s4-bullet{display:flex;align-items:flex-start;gap:10px;margin-bottom:3%;padding:3% 4%;background:var(--card);border-radius:8px;border-left:3px solid var(--green);}
+  .s4-bullet .emoji{font-size:clamp(1rem,2.2vw,1.4rem);}
+  .s4-bullet p{font-size:clamp(0.5rem,1.2vw,0.72rem);line-height:1.5;color:var(--white);}
+  .s4-question{font-family:'Bebas Neue',sans-serif;font-size:clamp(0.85rem,2.2vw,1.4rem);color:var(--yellow);letter-spacing:2px;text-align:center;margin-top:3%;}
+  /* CSS cookstove illustration */
+  .stove-wrap{flex:0.8;display:flex;justify-content:center;align-items:center;}
+  .stove-svg{width:clamp(80px,15vw,140px);}
+
+  /* SLIDE 5 */
+  .s5{background:#0D0D0D;padding:4% 5%;align-items:flex-start;justify-content:flex-start;}
+  .s5-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(1rem,2.8vw,1.8rem);letter-spacing:3px;color:var(--white);margin-bottom:2%;width:100%;margin-top:6%;}
+  .s5-pov{position:absolute;top:4%;right:14%;text-align:center;}
+  .s5-pov .meme-impact{font-size:clamp(0.45rem,1vw,0.6rem);color:var(--white);display:block;}
+  .s5-table{width:100%;border-collapse:collapse;margin-bottom:3%;}
+  .s5-table th{font-family:'Bebas Neue',sans-serif;letter-spacing:1.5px;font-size:clamp(0.45rem,1.1vw,0.68rem);padding:6px 10px;text-align:left;border-bottom:2px solid var(--border);color:#8B949E;}
+  .s5-table td{padding:5px 10px;font-size:clamp(0.42rem,1vw,0.62rem);border-bottom:1px solid var(--border);line-height:1.4;vertical-align:top;}
+  .s5-table tr:last-child td{border-bottom:none;}
+  .row-biz td:first-child{border-left:3px solid #4CC9F0;}
+  .row-dat td:first-child{border-left:3px solid var(--green);}
+  .row-app td:first-child{border-left:3px solid var(--yellow);}
+  .row-tec td:first-child{border-left:3px solid var(--pink);}
+  .layer-label{font-weight:700;}
+  .row-biz .layer-label{color:#4CC9F0;}
+  .row-dat .layer-label{color:var(--green);}
+  .row-app .layer-label{color:var(--yellow);}
+  .row-tec .layer-label{color:var(--pink);}
+  .reveal-cell{color:#30363D;font-style:italic;}
+  .s5-apps{display:flex;gap:6px;align-items:center;flex-wrap:nowrap;width:100%;overflow:hidden;}
+  .s5-apps-label{font-size:0.55rem;color:#8B949E;white-space:nowrap;font-family:'Bebas Neue',sans-serif;letter-spacing:1px;flex-shrink:0;}
+  .app-pill{display:flex;align-items:center;gap:3px;padding:3px 8px;border-radius:20px;font-size:0.55rem;font-weight:700;letter-spacing:0.5px;white-space:nowrap;flex-shrink:0;}
+  .pill-spotify{background:#1DB954;color:#000;}
+  .pill-tiktok{background:#010101;color:#fff;border:1px solid #69C9D0;}
+  .pill-ubereats{background:#06C167;color:#000;}
+  .pill-grab{background:#00B14F;color:#fff;}
+  .pill-instagram{background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);color:#fff;}
+
+  /* SLIDE 6 */
+  .s6{background:#0D0D0D;padding:4% 5%;align-items:flex-start;justify-content:flex-start;}
+  .s6-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(1rem,2.8vw,1.8rem);letter-spacing:3px;color:var(--white);text-align:center;margin-bottom:3%;width:100%;margin-top:6%;}
+  .s6-boxes{display:flex;gap:3%;width:100%;align-items:stretch;}
+  .s6-box{flex:1;border-radius:10px;padding:3% 3%;}
+  .s6-box.baseline{background:#1A0A08;border:1px solid #FF6B35;}
+  .s6-box.target{background:#081A0D;border:1px solid var(--green);}
+  .s6-box-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(0.7rem,1.8vw,1.1rem);letter-spacing:2px;margin-bottom:6px;}
+  .s6-box.baseline .s6-box-title{color:#FF6B35;}
+  .s6-box.target .s6-box-title{color:var(--green);}
+  .s6-item{display:flex;align-items:center;gap:6px;font-size:clamp(0.42rem,1vw,0.62rem);margin-bottom:4%;line-height:1.3;color:var(--white);}
+  .s6-item .emoji{font-size:clamp(0.8rem,1.6vw,1rem);}
+  /* CSS meme panels */
+  .s6-meme-panel{margin-top:6px;border-radius:6px;padding:6px 8px;text-align:center;}
+  .s6-meme-panel.fire{background:rgba(255,107,53,0.12);border:1px solid rgba(255,107,53,0.3);}
+  .s6-meme-panel.glow{background:rgba(0,255,135,0.08);border:1px solid rgba(0,255,135,0.25);}
+  /* This is Fine recreation */
+  .this-is-fine{display:flex;align-items:flex-end;gap:4px;justify-content:center;padding:4px 0;}
+  .tif-dog{font-size:clamp(1rem,2.5vw,1.6rem);}
+  .tif-flames{display:flex;gap:1px;align-items:flex-end;}
+  .flame{font-size:clamp(0.8rem,2vw,1.2rem);animation:flicker 0.8s infinite;}
+  .flame:nth-child(2){animation-delay:0.2s;font-size:clamp(0.7rem,1.8vw,1.1rem);}
+  .flame:nth-child(3){animation-delay:0.4s;}
+  .tif-caption{font-family:Impact,'Arial Narrow',sans-serif;font-size:clamp(0.42rem,1vw,0.6rem);color:#FF6B35;display:block;margin-top:3px;text-transform:uppercase;}
+  /* Glow up recreation */
+  .glow-up{display:flex;align-items:center;justify-content:center;gap:6px;padding:4px 0;}
+  .gu-before{font-size:clamp(0.8rem,2vw,1.2rem);filter:grayscale(1);opacity:0.5;}
+  .gu-arrow{color:var(--green);font-size:clamp(0.7rem,1.8vw,1.1rem);}
+  .gu-after{font-size:clamp(1rem,2.5vw,1.6rem);filter:drop-shadow(0 0 6px var(--green));}
+  .gu-caption{font-family:Impact,'Arial Narrow',sans-serif;font-size:clamp(0.42rem,1vw,0.6rem);color:var(--green);display:block;margin-top:3px;text-transform:uppercase;}
+  .s6-arrow{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:50px;}
+  .s6-arrow-symbol{font-size:clamp(1rem,2.5vw,1.8rem);color:var(--yellow);}
+  .s6-arrow-label{font-family:'Bebas Neue',sans-serif;font-size:clamp(0.38rem,0.9vw,0.55rem);color:var(--yellow);letter-spacing:1px;text-align:center;margin-top:4px;border:1px dashed var(--yellow);border-radius:4px;padding:2px 5px;}
+  .s6-categories{display:flex;gap:2%;margin-top:2%;width:100%;}
+  .s6-cat{flex:1;text-align:center;padding:5px 4px;background:var(--card);border-radius:6px;font-size:clamp(0.38rem,0.9vw,0.55rem);border:1px solid var(--border);letter-spacing:1px;color:#8B949E;font-family:'Bebas Neue',sans-serif;}
+  .s6-cat-desc{font-size:clamp(0.3rem,0.7vw,0.45rem);color:#555;font-family:'DM Sans',sans-serif;letter-spacing:0;margin-top:2px;font-style:italic;}
+
+  /* SLIDE 7 */
+  .s7{background:#0D0D0D;padding:4% 5%;align-items:flex-start;justify-content:flex-start;}
+  .s7-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(1rem,2.8vw,1.8rem);letter-spacing:3px;color:var(--white);margin-bottom:3%;width:100%;margin-top:6%;}
+  .s7-lanes{width:100%;display:flex;flex-direction:column;gap:2%;}
+  .s7-lane{border-radius:8px;padding:2.5% 3%;display:flex;align-items:center;gap:3%;}
+  .s7-lane.record{background:#0D1A24;border:1px solid #4CC9F0;}
+  .s7-lane.diff{background:#1A1A0D;border:1px solid var(--yellow);}
+  .s7-lane.innov{background:#1A0D1A;border:1px solid var(--pink);}
+  .s7-lane-icon{font-size:clamp(1.2rem,3vw,2rem);}
+  .s7-lane-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(0.7rem,1.8vw,1.1rem);letter-spacing:2px;}
+  .s7-lane.record .s7-lane-title{color:#4CC9F0;}
+  .s7-lane.diff .s7-lane-title{color:var(--yellow);}
+  .s7-lane.innov .s7-lane-title{color:var(--pink);}
+  .s7-lane-desc{font-size:clamp(0.42rem,1vw,0.6rem);color:#8B949E;margin-top:2px;}
+  .s7-lane-atec{font-size:clamp(0.42rem,1vw,0.6rem);color:var(--green);margin-top:2px;font-style:italic;}
+  .s7-lane-badge{margin-left:auto;display:flex;flex-direction:column;gap:3px;align-items:flex-end;}
+  .s7-speed-tag{font-family:Impact,sans-serif;font-size:clamp(0.4rem,1vw,0.62rem);padding:2px 7px;border-radius:10px;white-space:nowrap;-webkit-text-stroke:0.5px #000;}
+  .s7-speed-tag.slow{background:#4CC9F0;color:#000;}
+  .s7-speed-tag.mid{background:var(--yellow);color:#000;}
+  .s7-speed-tag.fast{background:var(--pink);color:#fff;}
+  .s7-sort-row{display:flex;gap:2%;margin-top:2%;flex-wrap:wrap;}
+  .s7-sort-title{font-size:clamp(0.45rem,1vw,0.62rem);color:#8B949E;margin-bottom:4px;letter-spacing:1px;font-family:'Bebas Neue',sans-serif;width:100%;}
+  .s7-sys-pill{font-size:clamp(0.42rem,1vw,0.6rem);color:var(--white);padding:3px 9px;border-radius:12px;background:var(--card);border:1px solid var(--border);}
+  .s7-sys-pill.atec{color:var(--green);border-color:var(--green);}
+
+  /* SLIDE 8 */
+  .s8{background:#0D0D0D;}
+  .s8-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(1rem,3vw,2rem);letter-spacing:3px;color:var(--white);text-align:center;margin-bottom:1%;}
+  .s8-sub{font-size:clamp(0.45rem,1.1vw,0.65rem);color:#8B949E;text-align:center;margin-bottom:3%;}
+  .s8-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2%;width:85%;}
+  .s8-tile{border-radius:10px;padding:5% 4%;text-align:center;border:1px solid;}
+  .s8-tile:nth-child(1){background:#0D1A24;border-color:#4CC9F0;}
+  .s8-tile:nth-child(2){background:#0D1A0D;border-color:var(--green);}
+  .s8-tile:nth-child(3){background:#1A1A0D;border-color:var(--yellow);}
+  .s8-tile:nth-child(4){background:#1A0D0D;border-color:var(--pink);}
+  .s8-tile:nth-child(5){background:#1A0D1A;border-color:#C77DFF;}
+  .s8-tile:nth-child(6){background:#1A1200;border-color:#FF9F1C;}
+  .s8-zword{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.2rem,3.5vw,2.5rem);letter-spacing:3px;}
+  .s8-tile:nth-child(1) .s8-zword{color:#4CC9F0;}
+  .s8-tile:nth-child(2) .s8-zword{color:var(--green);}
+  .s8-tile:nth-child(3) .s8-zword{color:var(--yellow);}
+  .s8-tile:nth-child(4) .s8-zword{color:var(--pink);}
+  .s8-tile:nth-child(5) .s8-zword{color:#C77DFF;}
+  .s8-tile:nth-child(6) .s8-zword{color:#FF9F1C;}
+  .s8-cursor{display:inline-block;width:4px;height:clamp(12px,2.5vw,18px);background:currentColor;margin-left:3px;animation:blink 1s infinite;vertical-align:middle;}
+  .s8-prompt{font-size:clamp(0.38rem,0.9vw,0.55rem);color:#8B949E;margin-top:4px;}
+  .s8-boss{position:absolute;top:4%;right:4%;background:var(--pink);color:#000;font-family:'Bebas Neue',sans-serif;font-size:clamp(0.5rem,1.2vw,0.7rem);letter-spacing:1px;padding:3px 8px;border-radius:4px;}
+  .s8-ue{position:absolute;bottom:4%;left:50%;transform:translateX(-50%);font-size:clamp(0.4rem,1vw,0.6rem);color:var(--green);letter-spacing:1px;font-family:'Bebas Neue',sans-serif;}
+
+  /* SLIDE 9 */
+  .s9{background:radial-gradient(ellipse at 40% 50%,#0D2818 0%,#0D0D0D 65%);}
+  .s9-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(0,255,135,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,135,0.03) 1px,transparent 1px);background-size:40px 40px;}
+  .s9-content{position:relative;z-index:2;text-align:center;width:100%;}
+  .s9-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.5rem,5vw,3.5rem);letter-spacing:4px;color:var(--white);margin-bottom:4%;}
+  .s9-recap{display:flex;gap:2%;justify-content:center;margin-bottom:4%;}
+  .s9-card{background:var(--card);border-radius:8px;padding:3%;border-top:3px solid;flex:1;max-width:200px;text-align:left;}
+  .s9-card:nth-child(1){border-color:#4CC9F0;}
+  .s9-card:nth-child(2){border-color:var(--green);}
+  .s9-card:nth-child(3){border-color:var(--yellow);}
+  .s9-card:nth-child(4){border-color:var(--pink);}
+  .s9-card-label{font-family:'Bebas Neue',sans-serif;font-size:clamp(0.55rem,1.5vw,0.9rem);letter-spacing:2px;margin-bottom:4px;}
+  .s9-card:nth-child(1) .s9-card-label{color:#4CC9F0;}
+  .s9-card:nth-child(2) .s9-card-label{color:var(--green);}
+  .s9-card:nth-child(3) .s9-card-label{color:var(--yellow);}
+  .s9-card:nth-child(4) .s9-card-label{color:var(--pink);}
+  .s9-card p{font-size:clamp(0.4rem,1vw,0.6rem);color:#8B949E;line-height:1.4;}
+  .s9-closing{font-size:clamp(0.55rem,1.4vw,0.8rem);color:#8B949E;font-style:italic;margin-bottom:3%;}
+  .s9-closing span{color:var(--green);}
+  .s9-name{position:absolute;bottom:5%;left:5%;font-size:clamp(0.45rem,1.1vw,0.65rem);color:var(--green);letter-spacing:1px;}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <span class="nav-title">EAA WEEK 2 TUTORIAL</span>
+  <div class="nav-controls">
+    <button class="nav-btn" id="prevBtn" onclick="changeSlide(-1)" disabled>← PREV</button>
+    <span class="slide-counter" id="counter">1 / 10</span>
+    <button class="nav-btn" id="nextBtn" onclick="changeSlide(1)">NEXT →</button>
+  </div>
+</nav>
+<div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+<main>
+
+<!-- SLIDE 0: QR -->
+<div class="slide-wrapper active" id="slide-1">
+  <div class="slide s0">
+    <div class="s0-grid"></div>
+    <div class="top-label">EAA WEEK 2 TUTORIAL</div>
+    <div class="s0-content">
+      <div class="s0-label">SCAN TO OPEN TODAY'S SLIDES</div>
+      <div class="s0-qr" id="qrcode"></div>
+      <div class="s0-url">prscpatty.github.io/eaa-tutorial</div>
+      <div class="s0-instruction">open on your phone to follow along</div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 1: TITLE -->
+<div class="slide-wrapper" id="slide-2">
+  <div class="slide s1">
+    <div class="s1-grid"></div>
+    <div class="top-label">EAA WEEK 2 TUTORIAL</div>
+    <div class="s1-content">
+      <div class="s1-main">ENTERPRISE<br><span>APPLICATIONS &</span><br>ARCHITECTURES</div>
+      <div class="s1-sub">Introduction</div>
+    </div>
+    <div class="s1-name">Prisca Patty | 1597672</div>
+    <div class="s1-npc">
+      <span class="meme-impact">[ NEW QUEST UNLOCKED ]</span>
+      <p>Make EAA Make Sense<span class="s1-cursor"></span></p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 2: PRIZES -->
+<div class="slide-wrapper" id="slide-3">
+  <div class="slide s2">
+    <div class="top-label">EAA WEEK 2 TUTORIAL</div>
+    <div class="s2-title">TWO WAYS TO WIN TODAY</div>
+    <div class="s2-boxes">
+      <div class="s2-box left">
+        <div class="icon">🏆</div>
+        <div class="box-title">CLASS VOTE</div>
+        <p>At the end, you vote for whoever contributed most to the discussion. That's your pick.</p>
+      </div>
+      <div class="s2-box right">
+        <div class="icon">🎯</div>
+        <div class="box-title">NAYEEM'S PICK</div>
+        <p>Nayeem will select whoever engaged most meaningfully throughout the session.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 3: AGENDA -->
+<div class="slide-wrapper" id="slide-4">
+  <div class="slide s3">
+    <div class="top-label">EAA WEEK 2 TUTORIAL</div>
+    <div class="s3-title">TODAY'S AGENDA</div>
+    <div class="s3-layout" style="justify-content:center;">
+      <div class="s3-questions" style="max-width:600px;flex:unset;width:70%;">
+        <div class="s3-q"><div class="s3-num">01</div><div class="s3-text"><strong>How do we describe what a system actually IS?</strong><span>→ EA LAYERS</span></div></div>
+        <div class="s3-q"><div class="s3-num">02</div><div class="s3-text"><strong>How do we plan where a system needs to GO?</strong><span>→ GAP ANALYSIS</span></div></div>
+        <div class="s3-q"><div class="s3-num">03</div><div class="s3-text"><strong>Do all systems need to change at the same speed?</strong><span>→ GARTNER PACE LAYERS</span></div></div>
+        <div class="s3-q"><div class="s3-num">04</div><div class="s3-text"><strong>What questions should every architect ask?</strong><span>→ ZACHMAN FRAMEWORK</span></div></div>
+      </div>
+          <rect width="200" height="220" fill="#111"/>
+          <!-- panel dividers -->
+          <line x1="100" y1="0" x2="100" y2="220" stroke="#333" stroke-width="1"/>
+          <line x1="0" y1="110" x2="200" y2="110" stroke="#333" stroke-width="1"/>
+          <!-- Panel 1: small plain brain -->
+          <ellipse cx="50" cy="55" rx="22" ry="18" fill="#c084fc" opacity="0.7"/>
+          <ellipse cx="43" cy="52" rx="10" ry="8" fill="#a855f7" opacity="0.8"/>
+          <ellipse cx="57" cy="52" rx="10" ry="8" fill="#a855f7" opacity="0.8"/>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 4: ATEC -->
+<div class="slide-wrapper" id="slide-5">
+  <div class="slide s4">
+    <div class="top-label">EAA WEEK 2 TUTORIAL</div>
+    <div class="s4-title">meet my internship company 👀</div>
+    <div class="s4-bullets" style="width:65%;margin:0 auto;">
+      <div class="s4-bullet"><span class="emoji">🍳</span><p>IoT-enabled eCook induction stoves — up to <strong>50% cheaper</strong> than LPG or charcoal</p></div>
+      <div class="s4-bullet"><span class="emoji">📡</span><p>Built-in global SIM cards tracking <strong>real-time cooking data</strong> from every household</p></div>
+      <div class="s4-bullet"><span class="emoji">💰</span><p>Households earn <strong>carbon credits</strong> and get paid via <strong>mobile money</strong> — just for cooking clean</p></div>
+    </div>
+    <div class="s4-question" style="margin-top:4%;">SO... HARDWARE? SOFTWARE? FINTECH? CLIMATE TECH? 🤔</div>
+  </div>
+</div>
+
+<!-- SLIDE 5: EA LAYERS -->
+<div class="slide-wrapper" id="slide-6">
+  <div class="slide s5">
+    <div class="top-label">EAA WEEK 2 TUTORIAL</div>
+    <div class="timer-badge">⏱ 9 MIN</div>
+    <div class="s5-pov">
+      <span class="meme-impact" style="color:#fff;font-size:clamp(0.8rem,1.8vw,1.1rem);">POV: YOU'RE AN</span>
+      <span class="meme-impact" style="color:var(--green);font-size:clamp(0.8rem,1.8vw,1.1rem);">ENTERPRISE ARCHITECT</span>
+    </div>
+    <div class="s5-title">ACTIVITY 1 — WHAT IS THIS SYSTEM?</div>
+    <table class="s5-table">
+      <thead><tr><th>LAYER</th><th>WHAT IT MEANS</th><th>ATEC EXAMPLE</th><th>YOUR APP</th></tr></thead>
+      <tbody>
+        <tr class="row-biz"><td><span class="layer-label">BUSINESS</span></td><td>What problem does it solve?</td><td>Clean cooking access + carbon credit income</td><td class="reveal-cell">your group →</td></tr>
+        <tr class="row-dat"><td><span class="layer-label">DATA</span></td><td>What data does it collect?</td><td>Cooking duration, energy use, emissions, payments</td><td class="reveal-cell">your group →</td></tr>
+        <tr class="row-app"><td><span class="layer-label">APPLICATION</span></td><td>What features/tools exist?</td><td>IoT dashboard, PAYG system, Cook2Earn platform</td><td class="reveal-cell">your group →</td></tr>
+        <tr class="row-tec"><td><span class="layer-label">TECHNOLOGY</span></td><td>What infrastructure runs it?</td><td>IoT chips, global SIMs, cloud servers, mobile money</td><td class="reveal-cell">your group →</td></tr>
+      </tbody>
+    </table>
+    <div class="s5-apps" style="flex-wrap:nowrap;overflow:hidden;">
+      <div class="s5-apps-label" style="flex-shrink:0;">TRY WITH:</div>
+      <div class="app-pill pill-spotify" style="flex-shrink:0;">🎵 Spotify</div>
+      <div class="app-pill pill-tiktok" style="flex-shrink:0;">🎵 TikTok</div>
+      <div class="app-pill pill-instagram" style="flex-shrink:0;">📸 Instagram</div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 6: GAP ANALYSIS -->
+<div class="slide-wrapper" id="slide-7">
+  <div class="slide s6">
+    <div class="top-label">EAA WEEK 2 TUTORIAL</div>
+    <div class="timer-badge">⏱ 9 MIN</div>
+    <div class="s6-title">ACTIVITY 2 — SPOT THE GAPS</div>
+    <div class="s6-boxes">
+      <div class="s6-box baseline">
+        <div class="s6-box-title">🔴 BASELINE (traditional)</div>
+        <div class="s6-item"><span class="emoji">🪵</span> Wood &amp; charcoal stoves only</div>
+        <div class="s6-item"><span class="emoji">💨</span> No emissions tracking whatsoever</div>
+        <div class="s6-item"><span class="emoji">🚫</span> No data — no system of any kind</div>
+        <div class="s6-item"><span class="emoji">💸</span> No payments or carbon incentives</div>
+        <!-- CSS This Is Fine recreation -->
+        <div class="s6-meme-panel fire">
+          <div class="this-is-fine">
+            <div class="tif-dog">🐶</div>
+            <div class="tif-flames">
+              <span class="flame">🔥</span><span class="flame">🔥</span><span class="flame">🔥</span>
+            </div>
+          </div>
+          <span class="tif-caption">this is fine</span>
+        </div>
+      </div>
+      <div class="s6-arrow">
+        <div class="s6-arrow-symbol">→</div>
+        <div class="s6-arrow-label">GAP<br>ANALYSIS</div>
+      </div>
+      <div class="s6-box target">
+        <div class="s6-box-title">🟢 TARGET (ATEC vision)</div>
+        <div class="s6-item"><span class="emoji">📡</span> IoT eCook stoves — real-time data</div>
+        <div class="s6-item"><span class="emoji">☁️</span> Cloud pipeline — automated tracking</div>
+        <div class="s6-item"><span class="emoji">🤖</span> Auto carbon credit calculations</div>
+        <div class="s6-item"><span class="emoji">📲</span> Mobile money payments to households</div>
+        <!-- CSS glow-up recreation -->
+        <div class="s6-meme-panel glow">
+          <div class="glow-up">
+            <span class="gu-before">🍳</span>
+            <span class="gu-arrow">→</span>
+            <span class="gu-after">🚀</span>
+          </div>
+          <span class="gu-caption">the glow up ✨</span>
+        </div>
+      </div>
+    </div>
+    <div class="s6-categories">
+      <div class="s6-cat">⚙️ TECHNOLOGY GAPS<div class="s6-cat-desc">infrastructure missing</div></div>
+      <div class="s6-cat">🗄️ DATA GAPS<div class="s6-cat-desc">data that doesn't exist yet</div></div>
+      <div class="s6-cat">💻 APPLICATION GAPS<div class="s6-cat-desc">tools not yet built</div></div>
+      <div class="s6-cat">👥 PEOPLE GAPS<div class="s6-cat-desc">training &amp; change needed</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 7: PACE LAYERS -->
+<div class="slide-wrapper" id="slide-8">
+  <div class="slide s7">
+    <div class="top-label">EAA WEEK 2 TUTORIAL</div>
+    <div class="timer-badge">⏱ 8 MIN</div>
+    <div class="s7-title">ACTIVITY 3 — HOW FAST DOES IT CHANGE?</div>
+    <div class="s7-lanes">
+      <div class="s7-lane record">
+        <div class="s7-lane-icon">🐢</div>
+        <div style="flex:1">
+          <div class="s7-lane-title">SYSTEM OF RECORD</div>
+          <div class="s7-lane-desc">Core, stable, changes rarely — must always be accurate</div>
+          <div class="s7-lane-atec">ATEC eg: household payment records, IoT data pipeline</div>
+        </div>
+        <div class="s7-lane-badge"><span class="s7-speed-tag slow">"deployed in 2009. still running."</span></div>
+      </div>
+      <div class="s7-lane diff">
+        <div class="s7-lane-icon">🚶</div>
+        <div style="flex:1">
+          <div class="s7-lane-title">SYSTEM OF DIFFERENTIATION</div>
+          <div class="s7-lane-desc">Supports competitive advantage — evolves every few years</div>
+          <div class="s7-lane-atec">ATEC eg: field agent tools</div>
+        </div>
+        <div class="s7-lane-badge"><span class="s7-speed-tag mid">"updated quarterly (allegedly)"</span></div>
+      </div>
+      <div class="s7-lane innov">
+        <div class="s7-lane-icon">🚀</div>
+        <div style="flex:1">
+          <div class="s7-lane-title">SYSTEM OF INNOVATION</div>
+          <div class="s7-lane-desc">Experimental, fast-changing — may not survive</div>
+          <div class="s7-lane-atec">ATEC eg: Cook2Earn carbon token platform</div>
+        </div>
+        <div class="s7-lane-badge"><span class="s7-speed-tag fast">"pivoted 3 times this sprint"</span></div>
+      </div>
+    </div>
+    <div class="s7-sort-row">
+      <div class="s7-sort-title">WHERE DO THESE BELONG? →</div>
+      <div class="s7-sys-pill atec">🟢 ATEC payment records</div>
+      <div class="s7-sys-pill atec">🟢 Cook2Earn platform</div>
+      <div class="s7-sys-pill">Spotify music database</div>
+      <div class="s7-sys-pill">Spotify Discover Weekly</div>
+      <div class="s7-sys-pill">TikTok For You Page AI</div>
+      <div class="s7-sys-pill">Unimelb's Canvas</div>
+      <div class="s7-sys-pill">Instagram Stories</div>
+      <div class="s7-sys-pill">CommBank's ledger system</div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 8: ZACHMAN -->
+<div class="slide-wrapper" id="slide-9">
+  <div class="slide s8">
+    <div class="top-label">EAA WEEK 2 TUTORIAL</div>
+    <div class="s8-boss">🎮 FINAL BOSS</div>
+    <div class="s8-title">ZACHMAN QUICK FIRE 🔥</div>
+    <div class="s8-sub">subject: Uber Eats &nbsp;·&nbsp; first correct answer wins the point &nbsp;·&nbsp; no skips</div>
+    <div class="s8-grid">
+      <div class="s8-tile"><div class="s8-zword">WHAT<span class="s8-cursor"></span></div><div class="s8-prompt">What does it deal in?</div></div>
+      <div class="s8-tile"><div class="s8-zword">HOW</div><div class="s8-prompt">How does it work?</div></div>
+      <div class="s8-tile"><div class="s8-zword">WHERE</div><div class="s8-prompt">Where does it operate?</div></div>
+      <div class="s8-tile"><div class="s8-zword">WHO</div><div class="s8-prompt">Who is involved?</div></div>
+      <div class="s8-tile"><div class="s8-zword">WHEN</div><div class="s8-prompt">When do things happen?</div></div>
+      <div class="s8-tile"><div class="s8-zword">WHY</div><div class="s8-prompt">Why does it exist?</div></div>
+    </div>
+    <div class="s8-ue">🛵 UBER EATS EDITION</div>
+  </div>
+</div>
+
+<!-- SLIDE 9: WRAP UP -->
+<div class="slide-wrapper" id="slide-10">
+  <div class="slide s9">
+    <div class="s9-grid"></div>
+    <div class="top-label">EAA WEEK 2 TUTORIAL</div>
+    <div class="s9-content">
+      <div class="s9-title">THAT'S A WRAP 🎬</div>
+      <div class="s9-recap">
+        <div class="s9-card"><div class="s9-card-label">EA LAYERS</div><p>Every system has four layers. Design them to work together.</p></div>
+        <div class="s9-card"><div class="s9-card-label">GAP ANALYSIS</div><p>Baseline → Target. Map what's missing before you build.</p></div>
+        <div class="s9-card"><div class="s9-card-label">PACE LAYERS</div><p>Not everything should change at the same speed.</p></div>
+        <div class="s9-card"><div class="s9-card-label">ZACHMAN</div><p>Ask all six questions. Every time. No skips.</p></div>
+      </div>
+      <div class="s9-closing">EA is everywhere. <span>Every app on your phone is an EA problem.</span><br>ATEC's cookstove is a four-layer enterprise system. So is TikTok.</div>
+    </div>
+    <div class="s9-name">Prisca Patty | 1597672</div>
+  </div>
+</div>
+
+</main>
+<script>
+  new QRCode(document.getElementById("qrcode"),{text:"https://prscpatty.github.io/eaa-tutorial/",width:160,height:160,colorDark:"#000000",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.H});
+  let cur=1;const total=10;
+  function changeSlide(dir){
+    document.getElementById('slide-'+cur).classList.remove('active');
+    cur=Math.max(1,Math.min(total,cur+dir));
+    document.getElementById('slide-'+cur).classList.add('active');
+    document.getElementById('counter').textContent=cur+' / '+total;
+    document.getElementById('prevBtn').disabled=cur===1;
+    document.getElementById('nextBtn').disabled=cur===total;
+    document.getElementById('progress').style.width=((cur/total)*100)+'%';
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'||e.key==='ArrowDown')changeSlide(1);
+    if(e.key==='ArrowLeft'||e.key==='ArrowUp')changeSlide(-1);
+  });
+  document.getElementById('progress').style.width=((1/total)*100)+'%';
+</script>
+</body>
+</html>
